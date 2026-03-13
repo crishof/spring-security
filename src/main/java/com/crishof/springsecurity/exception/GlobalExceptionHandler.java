@@ -37,7 +37,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(BusinessException.class)
     public ResponseEntity<ApiError> handleBusinessException(BusinessException ex, HttpServletRequest request) {
         log.warn("Business rule violation: {}", ex.getMessage());
-        return respond(HttpStatus.UNPROCESSABLE_ENTITY, "Business Rule Violation", ex, request);
+        return respond(HttpStatus.UNPROCESSABLE_CONTENT, "Business Rule Violation", ex, request);
     }
 
     @ExceptionHandler(EmailAlreadyExistException.class)
