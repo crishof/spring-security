@@ -2,7 +2,7 @@ package com.crishof.springsecurity.service;
 
 
 import com.crishof.springsecurity.dto.*;
-import com.crishof.springsecurity.security.SecurityUser;
+import com.crishof.springsecurity.security.principal.SecurityUser;
 
 import java.util.UUID;
 

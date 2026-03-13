@@ -1,7 +1,7 @@
 package com.crishof.springsecurity.controller;
 
 import com.crishof.springsecurity.dto.*;
-import com.crishof.springsecurity.security.SecurityUser;
+import com.crishof.springsecurity.security.principal.SecurityUser;
 import com.crishof.springsecurity.service.AuthService;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
