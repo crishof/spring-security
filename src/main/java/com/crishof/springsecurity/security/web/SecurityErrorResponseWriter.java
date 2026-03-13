@@ -1,4 +1,4 @@
-package com.crishof.springsecurity.security;
+package com.crishof.springsecurity.security.web;
 
 import com.crishof.springsecurity.exception.ApiError;
 import com.crishof.springsecurity.exception.ApiErrorFactory;
@@ -43,3 +43,4 @@ public class SecurityErrorResponseWriter {
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }
+

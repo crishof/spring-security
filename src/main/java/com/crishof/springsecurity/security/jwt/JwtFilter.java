@@ -1,5 +1,6 @@
-package com.crishof.springsecurity.security;
+package com.crishof.springsecurity.security.jwt;
 
+import com.crishof.springsecurity.security.principal.SecurityUserDetailsService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;

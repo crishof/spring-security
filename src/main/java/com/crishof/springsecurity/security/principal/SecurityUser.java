@@ -1,4 +1,4 @@
-package com.crishof.springsecurity.security;
+package com.crishof.springsecurity.security.principal;
 
 import com.crishof.springsecurity.model.Role;
 import com.crishof.springsecurity.model.SecurityAccount;

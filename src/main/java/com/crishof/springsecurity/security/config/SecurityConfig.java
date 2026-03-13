@@ -1,5 +1,8 @@
-package com.crishof.springsecurity.security;
+package com.crishof.springsecurity.security.config;
 
+import com.crishof.springsecurity.security.jwt.JwtFilter;
+import com.crishof.springsecurity.security.web.RestAccessDeniedHandler;
+import com.crishof.springsecurity.security.web.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;

@@ -1,5 +1,6 @@
-package com.crishof.springsecurity.security;
+package com.crishof.springsecurity.security.jwt;
 
+import com.crishof.springsecurity.security.principal.SecurityUser;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;

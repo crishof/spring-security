@@ -1,4 +1,4 @@
-package com.crishof.springsecurity.security;
+package com.crishof.springsecurity.security.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,3 +24,4 @@ public class RestAccessDeniedHandler implements AccessDeniedHandler {
         securityErrorResponseWriter.write(request, response, HttpStatus.FORBIDDEN, ERROR_FORBIDDEN, MESSAGE_ACCESS_DENIED);
     }
 }
+

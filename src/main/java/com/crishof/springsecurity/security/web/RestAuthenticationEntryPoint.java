@@ -1,4 +1,4 @@
-package com.crishof.springsecurity.security;
+package com.crishof.springsecurity.security.web;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,3 +24,4 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
         securityErrorResponseWriter.write(request, response, HttpStatus.UNAUTHORIZED, ERROR_UNAUTHORIZED, MESSAGE_AUTH_REQUIRED);
     }
 }
+
