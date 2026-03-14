@@ -22,6 +22,9 @@ public class AuthController {
 
     private final AuthService authService;
 
+//  ===========
+//    SIGN UP
+//  ===========
     @Operation(summary = "Sign up a new user")
     @ApiResponse(responseCode = "201", description = "User created successfully")
     @ApiResponse(responseCode = "400", description = "Invalid request")
@@ -31,6 +34,9 @@ public class AuthController {
         return ResponseEntity.status(HttpStatus.CREATED).body(authService.signup(request));
     }
 
+//  ===========
+//    LOGIN
+//  ===========
     @Operation(summary = "Login a user")
     @ApiResponse(responseCode = "200", description = "User logged in successfully")
     @ApiResponse(responseCode = "400", description = "Invalid request")
@@ -40,6 +46,9 @@ public class AuthController {
         return ResponseEntity.ok(authService.login(request));
     }
 
+//  ===========
+//   ACCEPT INVITE
+//  ===========
     @Operation(summary = "Accept a team invitation")
     @ApiResponse(responseCode = "200", description = "Invitation accepted successfully")
     @ApiResponse(responseCode = "400", description = "Invalid request")
@@ -49,6 +58,9 @@ public class AuthController {
         return ResponseEntity.ok(authService.acceptInvite(request));
     }
 
+//  ===========
+//    LOGOUT
+//  ===========
     @Operation(summary = "Logout the authenticated user")
     @ApiResponse(responseCode = "200", description = "User logged out successfully")
     @PostMapping("/logout")
@@ -57,6 +69,9 @@ public class AuthController {
         return ResponseEntity.ok(new MessageResponse("Logout successful"));
     }
 
+//  ===========
+//    LOGOUT ALL SESSIONS
+//  ===========
     @Operation(summary = "Logout from all sessions")
     @ApiResponse(responseCode = "200", description = "User logged out from all sessions successfully")
     @PreAuthorize("isAuthenticated()")
@@ -66,6 +81,9 @@ public class AuthController {
         return ResponseEntity.ok(new MessageResponse("Logout from all sessions successful"));
     }
 
+//  ===========
+//    GET AUTHENTICATED USER DETAILS
+//  ===========
     @Operation(summary = "Get authenticated user details")
     @ApiResponse(responseCode = "200", description = "User details retrieved successfully")
     @ApiResponse(responseCode = "401", description = "Unauthorized")
@@ -75,6 +93,9 @@ public class AuthController {
         return ResponseEntity.ok(authService.me(user));
     }
 
+//  ===========
+//    REFRESH TOKEN
+//  ===========
     @Operation(summary = "Refresh JWT token", description = "Generates new access token using refresh token")
     @ApiResponse(responseCode = "200", description = "Token refreshed successfully")
     @ApiResponse(responseCode = "401", description = "Invalid refresh token")
@@ -83,6 +104,9 @@ public class AuthController {
         return ResponseEntity.ok(authService.refreshToken(request.refreshToken()));
     }
 
+//  ===========
+//    VERIFICATION
+//  ===========
     @Operation(summary = "Verify user email", description = "Verifies account email with one-time code")
     @ApiResponse(responseCode = "200", description = "Email verified successfully")
     @ApiResponse(responseCode = "422", description = "Invalid or expired verification code")
@@ -91,6 +115,9 @@ public class AuthController {
         return ResponseEntity.ok(authService.verifyEmail(request));
     }
 
+//  ===========
+//    FORGOT PASSWORD
+//  ===========
     @Operation(summary = "Forgot password", description = "Sends password reset link to user email")
     @ApiResponse(responseCode = "200", description = "Reset link sent if email exists")
     @PostMapping("/forgot-password")
@@ -99,6 +126,9 @@ public class AuthController {
         return ResponseEntity.ok(new MessageResponse("If the email exists, a password reset link has been sent"));
     }
 
+//  ===========
+//    RESET PASSWORD
+//  ===========
     @Operation(summary = "Reset password", description = "Resets password using reset token")
     @ApiResponse(responseCode = "200", description = "Password reset successfully")
     @ApiResponse(responseCode = "400", description = "Invalid or expired token")

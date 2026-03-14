@@ -17,7 +17,11 @@ public class SecurityErrorResponseWriter {
 
     private final ApiErrorFactory apiErrorFactory;
 
-    public void write(HttpServletRequest request, HttpServletResponse response, HttpStatusCode status, String error, String message) throws IOException {
+    public void write(HttpServletRequest request,
+                      HttpServletResponse response,
+                      HttpStatusCode status,
+                      String error,
+                      String message) throws IOException {
 
         ApiError apiError = apiErrorFactory.build(status, error, message, request);
 
@@ -36,10 +40,12 @@ public class SecurityErrorResponseWriter {
                   "message":"%s",
                   "path":"%s"
                 }
-                """.formatted(escape(error.timestamp().toString()), error.status(), escape(error.error()), escape(error.message()), escape(error.path()));
+                """.formatted(escape(error.timestamp().toString()),
+                error.status(), escape(error.error()), escape(error.message()), escape(error.path()));
     }
 
     private String escape(String value) {
+
         return value.replace("\\", "\\\\").replace("\"", "\\\"");
     }
 }

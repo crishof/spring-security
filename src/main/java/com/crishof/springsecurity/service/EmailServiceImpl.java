@@ -47,7 +47,7 @@ public class EmailServiceImpl implements EmailService {
             SimpleMailMessage message = getResetPasswordMessage(recipientEmail, resetLink);
 
             mailSender.send(message);
-        } catch (Exception exception) {
+        } catch (Exception _) {
             throw new ExternalServiceException("Failed to send password reset email");
         }
     }
@@ -62,7 +62,7 @@ public class EmailServiceImpl implements EmailService {
         try {
             SimpleMailMessage message = getVerificationMessage(recipientEmail, code);
             mailSender.send(message);
-        } catch (Exception exception) {
+        } catch (Exception _) {
             throw new ExternalServiceException("Failed to send email verification code");
         }
     }
@@ -79,7 +79,7 @@ public class EmailServiceImpl implements EmailService {
         try {
             SimpleMailMessage message = getInvitationMessage(recipientEmail, inviteLink);
             mailSender.send(message);
-        } catch (Exception exception) {
+        } catch (Exception _) {
             throw new ExternalServiceException("Failed to send invitation email");
         }
     }

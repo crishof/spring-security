@@ -9,7 +9,10 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "tbl_invitation_tokens", indexes = {@Index(name = "idx_invitation_token_value", columnList = "token"), @Index(name = "idx_invitation_token_email", columnList = "email"), @Index(name = "idx_invitation_token_expires_at", columnList = "expires_at")})
+@Table(name = "tbl_invitation_tokens", indexes = {
+        @Index(name = "idx_invitation_token_value", columnList = "token"),
+        @Index(name = "idx_invitation_token_email", columnList = "email"),
+        @Index(name = "idx_invitation_token_expires_at", columnList = "expires_at")})
 @Getter
 @Setter
 @NoArgsConstructor

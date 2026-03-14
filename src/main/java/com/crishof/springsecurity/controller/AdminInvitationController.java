@@ -23,6 +23,9 @@ public class AdminInvitationController {
 
     private final AuthService authService;
 
+//  ===========
+//    CREATE INVITATION
+//  ===========
     @Operation(summary = "Create invitation", description = "Creates a new invitation and sends it by email")
     @ApiResponse(responseCode = "201", description = "Invitation created successfully")
     @ApiResponse(responseCode = "400", description = "Invalid request")

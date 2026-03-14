@@ -20,8 +20,15 @@ public class RestAuthenticationEntryPoint implements AuthenticationEntryPoint {
     private final SecurityErrorResponseWriter securityErrorResponseWriter;
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
-        securityErrorResponseWriter.write(request, response, HttpStatus.UNAUTHORIZED, ERROR_UNAUTHORIZED, MESSAGE_AUTH_REQUIRED);
+    public void commence(HttpServletRequest request,
+                         HttpServletResponse response,
+                         AuthenticationException authException) throws IOException {
+        securityErrorResponseWriter.write(
+                request,
+                response,
+                HttpStatus.UNAUTHORIZED,
+                ERROR_UNAUTHORIZED,
+                MESSAGE_AUTH_REQUIRED);
     }
 }
 

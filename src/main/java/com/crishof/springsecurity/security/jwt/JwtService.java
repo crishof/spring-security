@@ -15,7 +15,6 @@ import javax.crypto.SecretKey;
 import java.time.Instant;
 import java.util.Date;
 import java.util.Map;
-import java.util.UUID;
 import java.util.function.Function;
 
 @Service
@@ -28,7 +27,9 @@ public class JwtService {
     private final long refreshExpiration;
     private final SecretKey signingKey;
 
-    public JwtService(@Value("${jwt.secret_key}") String secretKeyValue, @Value("${jwt.expiration}") long jwtExpiration, @Value("${jwt.refresh-expiration}") long refreshExpiration) {
+    public JwtService(@Value("${jwt.secret_key}") String secretKeyValue,
+                      @Value("${jwt.expiration}") long jwtExpiration,
+                      @Value("${jwt.refresh-expiration}") long refreshExpiration) {
         this.jwtExpiration = jwtExpiration;
         this.refreshExpiration = refreshExpiration;
         this.signingKey = buildSigningKey(secretKeyValue);
@@ -38,21 +39,22 @@ public class JwtService {
     }
 
     public String generateAccessToken(SecurityUser user) {
-        Map<String, Object> claims = Map.of("uid", user.getId().toString(), "role", user.getRole().name(), "status", user.getStatus().name());
+        Map<String, Object> claims = Map.of(
+                "uid", user.getId().toString(),
+                "role", user.getRole().name(),
+                "status", user.getStatus().name());
         return buildToken(claims, user.getUsername(), jwtExpiration);
     }
 
     public String generateRefreshToken(SecurityUser user) {
-        Map<String, Object> claims = Map.of("uid", user.getId().toString(), "type", "refresh");
+        Map<String, Object> claims = Map.of(
+                "uid", user.getId().toString(),
+                "type", "refresh");
         return buildToken(claims, user.getUsername(), refreshExpiration);
     }
 
     public String getUserName(String token) {
         return getClaim(token, Claims::getSubject);
-    }
-
-    public UUID getUserId(String token) {
-        return UUID.fromString(getClaim(token, claims -> claims.get("uid", String.class)));
     }
 
     public Instant getExpiration(String token) {
@@ -78,17 +80,28 @@ public class JwtService {
     }
 
     private Claims getAllClaims(String token) {
-        return Jwts.parser().verifyWith(signingKey).clockSkewSeconds(CLOCK_SKEW_SECONDS).build().parseSignedClaims(token).getPayload();
+        return Jwts.parser()
+                .verifyWith(signingKey)
+                .clockSkewSeconds(CLOCK_SKEW_SECONDS)
+                .build()
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     private String buildToken(Map<String, Object> claims, String subject, long expirationMs) {
         Instant now = Instant.now();
 
-        return Jwts.builder().claims(claims).subject(subject).issuedAt(Date.from(now)).expiration(Date.from(now.plusMillis(expirationMs))).signWith(signingKey).compact();
+        return Jwts.builder()
+                .claims(claims)
+                .subject(subject)
+                .issuedAt(Date.from(now))
+                .expiration(Date.from(now.plusMillis(expirationMs)))
+                .signWith(signingKey)
+                .compact();
     }
 
     private SecretKey buildSigningKey(String secretKeyValue) {
-        if (secretKeyValue == null || secretKeyValue.isBlank()) {
+        if (secretKeyValue.isBlank()) {
             throw new IllegalStateException("JWT secret key must be configured");
         }
 

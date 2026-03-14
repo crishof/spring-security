@@ -8,7 +8,10 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "tbl_password_reset_tokens", indexes = {@Index(name = "idx_reset_token_token", columnList = "token"), @Index(name = "idx_reset_token_expiry", columnList = "expiry_date")})
+@Table(name = "tbl_password_reset_tokens",
+        indexes = {
+        @Index(name = "idx_reset_token_token", columnList = "token"),
+                @Index(name = "idx_reset_token_expiry", columnList = "expiry_date")})
 @Getter
 @Setter
 @NoArgsConstructor

@@ -65,7 +65,13 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
-        SecurityAccount account = SecurityAccount.builder().user(savedUser).passwordHash(passwordEncoder.encode(request.password())).emailVerified(false).enabled(true).locked(false).build();
+        SecurityAccount account = SecurityAccount.builder()
+                .user(savedUser)
+                .passwordHash(passwordEncoder.encode(request.password()))
+                .emailVerified(false)
+                .enabled(true)
+                .locked(false)
+                .build();
 
         securityAccountRepository.save(account);
 
@@ -73,7 +79,11 @@ public class AuthServiceImpl implements AuthService {
 
         log.info("User signed up successfully. Verification required for email={}", normalizedEmail);
 
-        return new SignupResponse(savedUser.getId(), savedUser.getEmail(), "Signup successful. Please verify your email using the code sent.", true);
+        return new SignupResponse(
+                savedUser.getId(),
+                savedUser.getEmail(),
+                "Signup successful. Please verify your email using the code sent.",
+                true);
     }
 
     @Override
@@ -81,10 +91,11 @@ public class AuthServiceImpl implements AuthService {
         String normalizedEmail = normalizeEmail(request.email());
 
         try {
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(normalizedEmail, request.password()));
-        } catch (DisabledException ex) {
+            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+                            normalizedEmail, request.password()));
+        } catch (DisabledException _) {
             throw new AccountNotVerifiedException("Email verification is required before login");
-        } catch (BadCredentialsException ex) {
+        } catch (BadCredentialsException _) {
             throw new AuthenticationFailedException("Invalid email or password");
         }
 
@@ -107,7 +118,8 @@ public class AuthServiceImpl implements AuthService {
                 throw new InvalidTokenException("Invalid or expired refresh token");
             }
 
-            RefreshToken storedToken = refreshTokenRepository.findByTokenAndRevokedFalse(refreshTokenValue).orElseThrow(() -> new InvalidTokenException("Invalid or expired refresh token"));
+            RefreshToken storedToken = refreshTokenRepository.findByTokenAndRevokedFalse(refreshTokenValue).orElseThrow(
+                    () -> new InvalidTokenException("Invalid or expired refresh token"));
 
             if (!storedToken.isValid()) {
                 throw new InvalidTokenException("Invalid or expired refresh token");
@@ -122,7 +134,7 @@ public class AuthServiceImpl implements AuthService {
             refreshTokenRepository.save(storedToken);
 
             return issueAuthTokens(user, account, true);
-        } catch (JwtException | IllegalArgumentException ex) {
+        } catch (JwtException | IllegalArgumentException _) {
             throw new InvalidTokenException("Invalid or expired refresh token");
         }
     }
@@ -131,11 +143,14 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse verifyEmail(VerifyEmailRequest request) {
         String normalizedEmail = normalizeEmail(request.email());
 
-        User user = userRepository.findByEmailIgnoreCase(normalizedEmail).orElseThrow(() -> new InvalidTokenException("Invalid or expired verification code"));
+        User user = userRepository.findByEmailIgnoreCase(normalizedEmail).orElseThrow(
+                () -> new InvalidTokenException("Invalid or expired verification code"));
 
         SecurityAccount account = getSecurityAccountByUserOrThrow(user);
 
-        EmailVerificationToken verificationToken = emailVerificationTokenRepository.findTopByUserAndCodeAndUsedFalseOrderByCreatedAtDesc(user, request.code()).orElseThrow(() -> new InvalidTokenException("Invalid or expired verification code"));
+        EmailVerificationToken verificationToken =
+                emailVerificationTokenRepository.findTopByUserAndCodeAndUsedFalseOrderByCreatedAtDesc(user, request.code())
+                        .orElseThrow(() -> new InvalidTokenException("Invalid or expired verification code"));
 
         if (!verificationToken.isValid()) {
             throw new InvalidTokenException("Invalid or expired verification code");
@@ -158,7 +173,8 @@ public class AuthServiceImpl implements AuthService {
     public AuthResponse acceptInvite(AcceptInviteRequest request) {
         String normalizedEmail = normalizeEmail(request.email());
 
-        InvitationToken invitationToken = invitationTokenRepository.findByToken(request.token()).orElseThrow(() -> new InvalidTokenException("Invalid or expired invitation token"));
+        InvitationToken invitationToken = invitationTokenRepository.findByToken(request.token())
+                .orElseThrow(() -> new InvalidTokenException("Invalid or expired invitation token"));
 
         if (!invitationToken.isValid()) {
             throw new InvalidTokenException("Invalid or expired invitation token");
@@ -180,7 +196,12 @@ public class AuthServiceImpl implements AuthService {
 
         User savedUser = userRepository.save(user);
 
-        SecurityAccount account = SecurityAccount.builder().user(savedUser).passwordHash(passwordEncoder.encode(request.password())).emailVerified(true).enabled(true).locked(false).build();
+        SecurityAccount account = SecurityAccount.builder()
+                .user(savedUser).passwordHash(passwordEncoder.encode(request.password()))
+                .emailVerified(true)
+                .enabled(true)
+                .locked(false)
+                .build();
 
         securityAccountRepository.save(account);
 
@@ -212,7 +233,12 @@ public class AuthServiceImpl implements AuthService {
 
         String token = UUID.randomUUID().toString();
 
-        PasswordResetToken resetToken = PasswordResetToken.builder().token(token).user(user).expiryDate(Instant.now().plus(PASSWORD_RESET_MINUTES, ChronoUnit.MINUTES)).used(false).build();
+        PasswordResetToken resetToken = PasswordResetToken.builder()
+                .token(token)
+                .user(user)
+                .expiryDate(Instant.now().plus(PASSWORD_RESET_MINUTES, ChronoUnit.MINUTES))
+                .used(false)
+                .build();
 
         passwordResetTokenRepository.save(resetToken);
         emailService.sendPasswordResetEmail(user.getEmail(), token);
@@ -226,7 +252,8 @@ public class AuthServiceImpl implements AuthService {
             throw new BusinessException("Passwords do not match");
         }
 
-        PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenAndUsedFalse(request.token()).orElseThrow(() -> new InvalidTokenException("Invalid or expired token"));
+        PasswordResetToken resetToken = passwordResetTokenRepository.findByTokenAndUsedFalse(request.token())
+                .orElseThrow(() -> new InvalidTokenException("Invalid or expired token"));
 
         if (!resetToken.isValid()) {
             throw new InvalidTokenException("Invalid or expired token");
@@ -264,14 +291,18 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public void logoutAll(UUID userId) {
-        User user = userRepository.findById(userId).orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
+        User user = userRepository.findById(userId).orElseThrow(
+                () -> new ResourceNotFoundException("User not found"));
         revokeAllRefreshTokens(user);
     }
 
     @Override
     public AuthMeResponse me(SecurityUser securityUser) {
-        return new AuthMeResponse(securityUser.getId(), securityUser.getEmail(), securityUser.getRole().name(), securityUser.getStatus().name());
+        return new AuthMeResponse(
+                securityUser.getId(),
+                securityUser.getEmail(),
+                securityUser.getRole().name(),
+                securityUser.getStatus().name());
     }
 
     @Override
@@ -282,21 +313,34 @@ public class AuthServiceImpl implements AuthService {
             throw new EmailAlreadyExistException("Email " + normalizedEmail + " is already in use");
         }
 
-        invitationTokenRepository.findTopByEmailIgnoreCaseAndUsedFalseOrderByCreatedAtDesc(normalizedEmail).ifPresent(existingInvitation -> {
+        invitationTokenRepository.findTopByEmailIgnoreCaseAndUsedFalseOrderByCreatedAtDesc(normalizedEmail)
+                .ifPresent(existingInvitation -> {
             if (existingInvitation.isValid()) {
                 existingInvitation.setUsed(true);
                 invitationTokenRepository.save(existingInvitation);
             }
         });
 
-        InvitationToken invitationToken = InvitationToken.builder().token(UUID.randomUUID().toString()).email(normalizedEmail).role(request.role()).used(false).expiresAt(Instant.now().plus(INVITATION_DAYS, ChronoUnit.DAYS)).build();
+        InvitationToken invitationToken = InvitationToken.builder()
+                .token(UUID.randomUUID().toString())
+                .email(normalizedEmail)
+                .role(request.role())
+                .used(false)
+                .expiresAt(Instant.now().plus(INVITATION_DAYS, ChronoUnit.DAYS))
+                .build();
 
         InvitationToken savedToken = invitationTokenRepository.save(invitationToken);
         emailService.sendInvitationEmail(savedToken.getEmail(), savedToken.getToken());
 
         log.info("Invitation created for email={} with role={}", savedToken.getEmail(), savedToken.getRole());
 
-        return new InvitationResponse(savedToken.getId(), savedToken.getEmail(), savedToken.getRole().name(), savedToken.getToken(), savedToken.getExpiresAt(), savedToken.isUsed());
+        return new InvitationResponse(
+                savedToken.getId(),
+                savedToken.getEmail(),
+                savedToken.getRole().name(),
+                savedToken.getToken(),
+                savedToken.getExpiresAt(),
+                savedToken.isUsed());
     }
 
     private void validateAccountCanAuthenticate(User user, SecurityAccount account) {
@@ -324,7 +368,12 @@ public class AuthServiceImpl implements AuthService {
         String refreshToken = jwtService.generateRefreshToken(securityUser);
 
         if (persistRefreshToken) {
-            RefreshToken storedRefreshToken = RefreshToken.builder().token(refreshToken).user(user).expiresAt(jwtService.getExpiration(refreshToken)).revoked(false).build();
+            RefreshToken storedRefreshToken = RefreshToken.builder()
+                    .token(refreshToken)
+                    .user(user)
+                    .expiresAt(jwtService.getExpiration(refreshToken))
+                    .revoked(false)
+                    .build();
 
             refreshTokenRepository.save(storedRefreshToken);
         }
@@ -337,22 +386,30 @@ public class AuthServiceImpl implements AuthService {
 
         String code = generateVerificationCode();
 
-        EmailVerificationToken verificationToken = EmailVerificationToken.builder().user(user).code(code).expiryDate(Instant.now().plus(emailVerificationCodeTtlMinutes, ChronoUnit.MINUTES)).used(false).build();
+        EmailVerificationToken verificationToken =
+                EmailVerificationToken.builder()
+                        .user(user).code(code)
+                        .expiryDate(Instant.now().plus(emailVerificationCodeTtlMinutes, ChronoUnit.MINUTES))
+                        .used(false)
+                        .build();
 
         emailVerificationTokenRepository.save(verificationToken);
         emailService.sendEmailVerificationCode(user.getEmail(), code);
     }
 
     private void revokeAllRefreshTokens(User user) {
-        refreshTokenRepository.findAllByUserAndRevokedFalse(user).forEach(token -> token.setRevoked(true));
+        refreshTokenRepository.findAllByUserAndRevokedFalse(user)
+                .forEach(token -> token.setRevoked(true));
     }
 
     private User getUserByEmailOrThrow(String email) {
-        return userRepository.findByEmailIgnoreCase(email).orElseThrow(() -> new ResourceNotFoundException("User not found with email: " + email));
+        return userRepository.findByEmailIgnoreCase(email).orElseThrow(
+                () -> new ResourceNotFoundException("User not found with email: " + email));
     }
 
     private SecurityAccount getSecurityAccountByUserOrThrow(User user) {
-        return securityAccountRepository.findByUser(user).orElseThrow(() -> new ResourceNotFoundException("Security account not found for user"));
+        return securityAccountRepository.findByUser(user).orElseThrow(
+                () -> new ResourceNotFoundException("Security account not found for user"));
     }
 
     private String normalizeEmail(String email) {

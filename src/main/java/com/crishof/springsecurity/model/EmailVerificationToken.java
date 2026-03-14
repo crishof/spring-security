@@ -8,7 +8,9 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "tbl_email_verification_tokens", indexes = {@Index(name = "idx_email_verification_code", columnList = "code"), @Index(name = "idx_email_verification_expiry", columnList = "expiry_date")})
+@Table(name = "tbl_email_verification_tokens", indexes = {
+        @Index(name = "idx_email_verification_code", columnList = "code"),
+        @Index(name = "idx_email_verification_expiry", columnList = "expiry_date")})
 @Getter
 @Setter
 @NoArgsConstructor

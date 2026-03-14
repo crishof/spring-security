@@ -57,10 +57,4 @@ public class User implements Serializable {
     void onUpdate() {
         updatedAt = Instant.now();
     }
-
-    public void setEmailVerified(boolean b) {
-    }
-
-    public void setAccountEnabled(boolean b) {
-    }
 }

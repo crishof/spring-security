@@ -17,11 +17,12 @@ public class SecurityUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
-        if (email == null || email.isBlank()) {
+        if (email.isBlank()) {
             throw new UsernameNotFoundException("Email cannot be blank");
         }
 
-        SecurityAccount account = securityAccountRepository.findByUserEmailIgnoreCase(email.trim()).orElseThrow(() -> new UsernameNotFoundException("User not found with email: " + email));
+        SecurityAccount account = securityAccountRepository.findByUserEmailIgnoreCase(email.trim()).orElseThrow(
+                () -> new UsernameNotFoundException("User not found with email: " + email));
 
         User user = account.getUser();
         return new SecurityUser(user, account);

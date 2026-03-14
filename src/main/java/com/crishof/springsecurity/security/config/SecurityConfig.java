@@ -33,7 +33,19 @@ import java.util.List;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private static final List<String> PUBLIC_ENDPOINTS = List.of("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**", "/actuator/health", "/api/v1/auth/signup", "/api/v1/auth/login", "/api/v1/auth/refresh", "/api/v1/auth/verify-email", "/api/v1/auth/forgot-password", "/api/v1/auth/reset-password", "/api/v1/auth/accept-invite", "/api/v1/auth/logout");
+    private static final List<String> PUBLIC_ENDPOINTS = List.of(
+            "/swagger-ui/**",
+            "/swagger-ui.html",
+            "/v3/api-docs/**",
+            "/actuator/health",
+            "/api/v1/auth/signup",
+            "/api/v1/auth/login",
+            "/api/v1/auth/refresh",
+            "/api/v1/auth/verify-email",
+            "/api/v1/auth/forgot-password",
+            "/api/v1/auth/reset-password",
+            "/api/v1/auth/accept-invite",
+            "/api/v1/auth/logout");
 
     private static final List<String> ALLOWED_METHODS = List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS");
     private static final List<String> EXPOSED_HEADERS = List.of("Authorization");
@@ -63,7 +75,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         try {
-            http.csrf(AbstractHttpConfigurer::disable).cors(cors -> cors.configurationSource(corsConfigurationSource())).sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS)).exceptionHandling(exceptions -> exceptions.authenticationEntryPoint(restAuthenticationEntryPoint).accessDeniedHandler(restAccessDeniedHandler)).authorizeHttpRequests(auth -> auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll().requestMatchers(PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll().requestMatchers("/api/v1/admin/**").hasRole("ADMIN").requestMatchers("/actuator/**").hasRole("ADMIN").anyRequest().authenticated()).addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+            http.csrf(AbstractHttpConfigurer::disable)
+                    .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                    .sessionManagement(
+                            session -> session
+                                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                    .exceptionHandling(
+                            exceptions -> exceptions
+                                    .authenticationEntryPoint(restAuthenticationEntryPoint)
+                            .accessDeniedHandler(restAccessDeniedHandler))
+                    .authorizeHttpRequests(
+                            auth ->
+                                    auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                            .requestMatchers(PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll()
+                            .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                            .requestMatchers("/actuator/**").hasRole("ADMIN")
+                            .anyRequest().authenticated())
+                    .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
 
             return http.build();
         } catch (Exception ex) {
@@ -87,6 +115,9 @@ public class SecurityConfig {
     }
 
     private List<String> resolveAllowedOrigins() {
-        return Arrays.stream(allowedOrigins.split(",")).map(String::trim).filter(StringUtils::hasText).toList();
+        return Arrays.stream(allowedOrigins.split(","))
+                .map(String::trim)
+                .filter(StringUtils::hasText)
+                .toList();
     }
 }
