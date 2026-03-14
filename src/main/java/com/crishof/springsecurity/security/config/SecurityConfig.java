@@ -4,6 +4,7 @@ import com.crishof.springsecurity.security.jwt.JwtFilter;
 import com.crishof.springsecurity.security.web.RestAccessDeniedHandler;
 import com.crishof.springsecurity.security.web.RestAuthenticationEntryPoint;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -31,6 +32,7 @@ import java.util.List;
 @EnableWebSecurity
 @EnableMethodSecurity
 @RequiredArgsConstructor
+@Slf4j
 public class SecurityConfig {
 
     private static final List<String> PUBLIC_ENDPOINTS = List.of(
@@ -60,21 +62,27 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
+        log.debug("Using BCryptPasswordEncoder");
         return new BCryptPasswordEncoder();
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) {
+        log.debug("Creating AuthenticationManager");
         try {
+            log.debug("Getting AuthenticationManager from AuthenticationConfiguration");
             return configuration.getAuthenticationManager();
         } catch (Exception ex) {
+            log.error("Failed to create AuthenticationManager", ex);
             throw new IllegalStateException("Failed to create AuthenticationManager", ex);
         }
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
+        log.debug("Configuring Spring Security filter chain");
         try {
+            log.debug("Disabling CSRF and setting CORS configuration");
             http.csrf(AbstractHttpConfigurer::disable)
                     .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                     .sessionManagement(
@@ -92,15 +100,17 @@ public class SecurityConfig {
                             .requestMatchers("/actuator/**").hasRole("ADMIN")
                             .anyRequest().authenticated())
                     .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-
+            log.debug("Spring Security filter chain configured");
             return http.build();
         } catch (Exception ex) {
+            log.error("Failed to configure Spring Security filter chain", ex);
             throw new IllegalStateException("Failed to configure Spring Security filter chain", ex);
         }
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
+        log.debug("Creating CORS configuration source");
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(resolveAllowedOrigins());
         configuration.setAllowedMethods(ALLOWED_METHODS);
@@ -108,13 +118,17 @@ public class SecurityConfig {
         configuration.setExposedHeaders(EXPOSED_HEADERS);
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
+        log.debug("CORS configuration source created");
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        log.debug("Registering CORS configuration for all endpoints");
         source.registerCorsConfiguration("/**", configuration);
+        log.debug("CORS configuration registered for all endpoints");
         return source;
     }
 
     private List<String> resolveAllowedOrigins() {
+        log.debug("Resolving allowed origins from {}", allowedOrigins);
         return Arrays.stream(allowedOrigins.split(","))
                 .map(String::trim)
                 .filter(StringUtils::hasText)

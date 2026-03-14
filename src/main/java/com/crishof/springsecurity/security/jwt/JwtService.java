@@ -39,6 +39,8 @@ public class JwtService {
     }
 
     public String generateAccessToken(SecurityUser user) {
+        log.debug("Generating access token for user: {}", user.getUsername());
+
         Map<String, Object> claims = Map.of(
                 "uid", user.getId().toString(),
                 "role", user.getRole().name(),
@@ -47,6 +49,7 @@ public class JwtService {
     }
 
     public String generateRefreshToken(SecurityUser user) {
+        log.debug("Generating refresh token for user: {}", user.getUsername());
         Map<String, Object> claims = Map.of(
                 "uid", user.getId().toString(),
                 "type", "refresh");
@@ -54,16 +57,20 @@ public class JwtService {
     }
 
     public String getUserName(String token) {
+        log.debug("Getting username from token: {}", token);
         return getClaim(token, Claims::getSubject);
     }
 
     public Instant getExpiration(String token) {
+        log.debug("Getting expiration from token: {}", token);
         Date expiration = getClaim(token, Claims::getExpiration);
         return expiration.toInstant();
     }
 
     public boolean isTokenValid(String token) {
+        log.debug("Validating token: {}", token);
         try {
+            log.debug("Getting claims from token: {}", token);
             getAllClaims(token);
             return true;
         } catch (ExpiredJwtException ex) {
@@ -76,10 +83,12 @@ public class JwtService {
     }
 
     public <T> T getClaim(String token, Function<Claims, T> claimsResolver) {
+        log.debug("Getting claim from token: {}", token);
         return claimsResolver.apply(getAllClaims(token));
     }
 
     private Claims getAllClaims(String token) {
+        log.debug("Getting all claims from token: {}", token);
         return Jwts.parser()
                 .verifyWith(signingKey)
                 .clockSkewSeconds(CLOCK_SKEW_SECONDS)
@@ -89,6 +98,7 @@ public class JwtService {
     }
 
     private String buildToken(Map<String, Object> claims, String subject, long expirationMs) {
+        log.debug("Building token for subject: {}, expiration (ms): {}", subject, expirationMs);
         Instant now = Instant.now();
 
         return Jwts.builder()
@@ -101,14 +111,18 @@ public class JwtService {
     }
 
     private SecretKey buildSigningKey(String secretKeyValue) {
+        log.debug("Building signing key from value: {}", secretKeyValue);
         if (secretKeyValue.isBlank()) {
+            log.error("JWT secret key is blank");
             throw new IllegalStateException("JWT secret key must be configured");
         }
 
         try {
+            log.debug("Decoding secret key value");
             byte[] keyBytes = Decoders.BASE64.decode(secretKeyValue);
             return Keys.hmacShaKeyFor(keyBytes);
         } catch (IllegalArgumentException ex) {
+            log.error("JWT secret key is not a valid Base64-encoded value");
             throw new IllegalStateException("JWT secret key must be a valid Base64-encoded value", ex);
         }
     }
