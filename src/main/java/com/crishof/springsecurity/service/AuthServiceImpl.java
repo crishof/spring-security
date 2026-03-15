@@ -49,6 +49,9 @@ public class AuthServiceImpl implements AuthService {
     @Value("${app.email-verification.code-ttl-minutes:10}")
     private long emailVerificationCodeTtlMinutes;
 
+//  ===========
+//    SIGNUP
+//  ===========
     @Override
     public SignupResponse signup(SignupRequest request) {
         String normalizedEmail = normalizeEmail(request.email());
@@ -90,6 +93,9 @@ public class AuthServiceImpl implements AuthService {
                 true);
     }
 
+//  ===========
+//    LOGIN
+//  ===========
     @Override
     public AuthResponse login(LoginRequest request) {
         String normalizedEmail = normalizeEmail(request.email());
@@ -115,6 +121,9 @@ public class AuthServiceImpl implements AuthService {
         return issueAuthTokens(user, account, true);
     }
 
+//  ===========
+//    REFRESH
+//  ===========
     @Override
     public AuthResponse refreshToken(String refreshTokenValue) {
         log.debug("refreshToken requested");
@@ -153,6 +162,9 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
+//  ===========
+//    VERIFY EMAIL
+//  ===========
     @Override
     public AuthResponse verifyEmail(VerifyEmailRequest request) {
         String normalizedEmail = normalizeEmail(request.email());
@@ -188,6 +200,9 @@ public class AuthServiceImpl implements AuthService {
         return issueAuthTokens(user, account, true);
     }
 
+//  ===========
+//    ACCOUNT VERIFICATION
+//  ===========
     @Override
     public AuthResponse acceptInvite(AcceptInviteRequest request) {
         String normalizedEmail = normalizeEmail(request.email());
@@ -237,6 +252,9 @@ public class AuthServiceImpl implements AuthService {
         return issueAuthTokens(savedUser, account, true);
     }
 
+//  ===========
+//    FORGOT PASSWORD
+//  ===========
     @Override
     public void forgotPassword(String email) {
         String normalizedEmail = normalizeEmail(email);
@@ -277,6 +295,9 @@ public class AuthServiceImpl implements AuthService {
         log.info("Password reset token generated for user {}", user.getEmail());
     }
 
+//  ===========
+//    RESET PASSWORD
+//  ===========
     @Override
     public void resetPassword(ResetPasswordRequest request) {
         log.debug("resetPassword requested");
@@ -315,6 +336,9 @@ public class AuthServiceImpl implements AuthService {
         log.info("Password successfully reset for user {}", user.getEmail());
     }
 
+//  ===========
+//    LOGOUT
+//  ===========
     @Override
     public void logout(String refreshTokenValue) {
         log.debug("logout requested");
@@ -330,6 +354,9 @@ public class AuthServiceImpl implements AuthService {
         });
     }
 
+//  ===========
+//  LOGOUT ALL
+//  ===========
     @Override
     public void logoutAll(UUID userId) {
         log.debug("logoutAll requested for userId={}", userId);
@@ -339,6 +366,9 @@ public class AuthServiceImpl implements AuthService {
         log.debug("logoutAll completed for userId={}", userId);
     }
 
+//  ===========
+//  CHANGE PASSWORD
+//  ===========
     @Override
     public AuthMeResponse me(SecurityUser securityUser) {
         log.debug("me requested for userId={}", securityUser.getId());
@@ -349,6 +379,9 @@ public class AuthServiceImpl implements AuthService {
                 securityUser.getStatus().name());
     }
 
+//  ===========
+//  CREATE INVITATION
+//  ===========
     @Override
     public InvitationResponse createInvitation(CreateInvitationRequest request) {
         String normalizedEmail = normalizeEmail(request.email());
@@ -392,6 +425,9 @@ public class AuthServiceImpl implements AuthService {
                 savedToken.isUsed());
     }
 
+//  ===========
+//  PRIVATE METHODS
+//  ===========
     private void validateAccountCanAuthenticate(User user, SecurityAccount account) {
         log.debug("validateAccountCanAuthenticate userId={} status={} enabled={} emailVerified={} locked={}", user.getId(), user.getStatus(), account.isEnabled(), account.isEmailVerified(), account.isLocked());
         if (account.isLocked() || user.getStatus() == UserStatus.BLOCKED) {
@@ -487,7 +523,7 @@ public class AuthServiceImpl implements AuthService {
     }
 
     private String generateVerificationCode() {
-        int min = (int) Math.pow(10, VERIFICATION_CODE_DIGITS - 1);
+        int min = (int) Math.pow(10, VERIFICATION_CODE_DIGITS - 1.0);
         int max = (int) Math.pow(10, VERIFICATION_CODE_DIGITS);
         int code = ThreadLocalRandom.current().nextInt(min, max);
         log.debug("generateVerificationCode produced a {}-digit code", VERIFICATION_CODE_DIGITS);
