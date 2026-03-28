@@ -34,6 +34,8 @@ public class AuthServiceImpl implements AuthService {
     private static final int VERIFICATION_CODE_DIGITS = 6;
     private static final long PASSWORD_RESET_MINUTES = 30;
     private static final long INVITATION_DAYS = 7;
+    private static final String PASSWORD_REQUIREMENTS =
+            "Password must be 8-72 characters with uppercase, lowercase, digit and special character";
 
     private final UserRepository userRepository;
     private final SecurityAccountRepository securityAccountRepository;
@@ -104,10 +106,10 @@ public class AuthServiceImpl implements AuthService {
         try {
             authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
                             normalizedEmail, request.password()));
-        } catch (DisabledException _) {
+        } catch (DisabledException ignored) {
             log.debug("login rejected by authentication manager because account disabled for email={}", normalizedEmail);
             throw new AccountNotVerifiedException("Email verification is required before login");
-        } catch (BadCredentialsException _) {
+        } catch (BadCredentialsException ignored) {
             log.debug("login rejected due to bad credentials for email={}", normalizedEmail);
             throw new AuthenticationFailedException("Invalid email or password");
         }
@@ -118,7 +120,7 @@ public class AuthServiceImpl implements AuthService {
         validateAccountCanAuthenticate(user, account);
         log.debug("login successful pre-token checks for userId={}", user.getId());
 
-        return issueAuthTokens(user, account, true);
+        return issueAuthTokens(user, account);
     }
 
 //  ===========
@@ -155,8 +157,8 @@ public class AuthServiceImpl implements AuthService {
             refreshTokenRepository.save(storedToken);
             log.debug("stored refresh token revoked for userId={}", user.getId());
 
-            return issueAuthTokens(user, account, true);
-        } catch (JwtException | IllegalArgumentException _) {
+            return issueAuthTokens(user, account);
+        } catch (JwtException | IllegalArgumentException ignored) {
             log.debug("refreshToken rejected because parsing/validation threw exception");
             throw new InvalidTokenException("Invalid or expired refresh token");
         }
@@ -197,12 +199,35 @@ public class AuthServiceImpl implements AuthService {
         userRepository.save(user);
         log.debug("user status updated to ACTIVE for userId={}", user.getId());
 
-        return issueAuthTokens(user, account, true);
+        return issueAuthTokens(user, account);
     }
 
 //  ===========
 //    ACCOUNT VERIFICATION
 //  ===========
+    @Override
+    public InviteInfoResponse getInvitationInfo(String token) {
+        log.debug("getInvitationInfo requested");
+        if (token == null || token.isBlank()) {
+            log.debug("getInvitationInfo rejected because token is blank");
+            throw new InvalidTokenException("Invitation token is required");
+        }
+
+        InvitationToken invitationToken = invitationTokenRepository.findByToken(token).orElseThrow(
+                () -> new InvalidTokenException("Invalid or expired invitation token"));
+
+        if (!invitationToken.isValid()) {
+            log.debug("getInvitationInfo rejected because invitation token is invalid");
+            throw new InvalidTokenException("Invalid or expired invitation token");
+        }
+
+        return new InviteInfoResponse(
+                invitationToken.getEmail(),
+                invitationToken.getRole().name(),
+                invitationToken.getExpiresAt(),
+                PASSWORD_REQUIREMENTS);
+    }
+
     @Override
     public AuthResponse acceptInvite(AcceptInviteRequest request) {
         String normalizedEmail = normalizeEmail(request.email());
@@ -249,12 +274,45 @@ public class AuthServiceImpl implements AuthService {
         invitationTokenRepository.save(invitationToken);
         log.debug("invitation token marked as used id={}", invitationToken.getId());
 
-        return issueAuthTokens(savedUser, account, true);
+        return issueAuthTokens(savedUser, account);
     }
 
 //  ===========
 //    FORGOT PASSWORD
 //  ===========
+    @Override
+    public void resendEmailVerificationCode(String email) {
+        String normalizedEmail = normalizeEmail(email);
+        log.debug("resendEmailVerificationCode requested for email={}", normalizedEmail);
+
+        Optional<User> userOptional = userRepository.findByEmailIgnoreCase(normalizedEmail);
+        if (userOptional.isEmpty()) {
+            log.info("Email verification resend requested for non-existing email={}", normalizedEmail);
+            return;
+        }
+
+        User user = userOptional.get();
+        Optional<SecurityAccount> accountOptional = securityAccountRepository.findByUser(user);
+        if (accountOptional.isEmpty()) {
+            log.warn("Email verification resend ignored because security account is missing for userId={}", user.getId());
+            return;
+        }
+
+        SecurityAccount account = accountOptional.get();
+        if (account.isEmailVerified() || user.getStatus() == UserStatus.ACTIVE) {
+            log.info("Email verification resend ignored because account is already verified for userId={}", user.getId());
+            return;
+        }
+
+        if (!account.isEnabled() || account.isLocked() || user.getStatus() != UserStatus.PENDING_VERIFICATION) {
+            log.info("Email verification resend ignored due to account state for userId={} enabled={} locked={} status={}", user.getId(), account.isEnabled(), account.isLocked(), user.getStatus());
+            return;
+        }
+
+        issueEmailVerificationCode(user);
+        log.info("Email verification code reissued for userId={}", user.getId());
+    }
+
     @Override
     public void forgotPassword(String email) {
         String normalizedEmail = normalizeEmail(email);
@@ -447,24 +505,22 @@ public class AuthServiceImpl implements AuthService {
         }
     }
 
-    private AuthResponse issueAuthTokens(User user, SecurityAccount account, boolean persistRefreshToken) {
-        log.debug("issueAuthTokens userId={} persistRefreshToken={}", user.getId(), persistRefreshToken);
+    private AuthResponse issueAuthTokens(User user, SecurityAccount account) {
+        log.debug("issueAuthTokens userId={}", user.getId());
         SecurityUser securityUser = new SecurityUser(user, account);
 
         String accessToken = jwtService.generateAccessToken(securityUser);
         String refreshToken = jwtService.generateRefreshToken(securityUser);
 
-        if (persistRefreshToken) {
-            RefreshToken storedRefreshToken = RefreshToken.builder()
-                    .token(refreshToken)
-                    .user(user)
-                    .expiresAt(jwtService.getExpiration(refreshToken))
-                    .revoked(false)
-                    .build();
+        RefreshToken storedRefreshToken = RefreshToken.builder()
+                .token(refreshToken)
+                .user(user)
+                .expiresAt(jwtService.getExpiration(refreshToken))
+                .revoked(false)
+                .build();
 
-            refreshTokenRepository.save(storedRefreshToken);
-            log.debug("refresh token persisted for userId={} expiresAt={}", user.getId(), storedRefreshToken.getExpiresAt());
-        }
+        refreshTokenRepository.save(storedRefreshToken);
+        log.debug("refresh token persisted for userId={} expiresAt={}", user.getId(), storedRefreshToken.getExpiresAt());
 
         return AuthResponse.from(user, accessToken, refreshToken);
     }

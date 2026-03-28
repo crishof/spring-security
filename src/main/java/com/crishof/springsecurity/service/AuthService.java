@@ -18,6 +18,10 @@ public interface AuthService {
 
     AuthResponse acceptInvite(AcceptInviteRequest request);
 
+    InviteInfoResponse getInvitationInfo(String token);
+
+    void resendEmailVerificationCode(String email);
+
     void forgotPassword(String email);
 
     void resetPassword(ResetPasswordRequest request);
