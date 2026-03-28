@@ -6,6 +6,7 @@ import com.crishof.springsecurity.model.*;
 import com.crishof.springsecurity.repository.*;
 import com.crishof.springsecurity.security.jwt.JwtService;
 import com.crishof.springsecurity.security.principal.SecurityUser;
+import com.crishof.springsecurity.util.NormalizationUtil;
 import io.jsonwebtoken.JwtException;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
@@ -568,12 +569,34 @@ public class AuthServiceImpl implements AuthService {
 
     private String normalizeEmail(String email) {
         String normalizedEmail = email == null ? "" : email.trim().toLowerCase(Locale.ROOT);
+        if (!normalizedEmail.isEmpty()) {
+            try {
+                String previousValue = normalizedEmail;
+                normalizedEmail = NormalizationUtil.normalizeEmail(normalizedEmail);
+                if (!normalizedEmail.equals(previousValue)) {
+                    log.debug("normalizeEmail utility produced canonical value for input");
+                }
+            } catch (IllegalArgumentException ex) {
+                log.debug("normalizeEmail kept non-canonical value after format check failed: {}", normalizedEmail);
+            }
+        }
         log.debug("normalizeEmail inputPresent={} output={}", email != null, normalizedEmail);
         return normalizedEmail;
     }
 
     private String normalizeFullName(String fullName) {
         String normalizedFullName = fullName == null ? "" : fullName.trim().replaceAll("\\s+", " ");
+        if (!normalizedFullName.isEmpty()) {
+            try {
+                String previousValue = normalizedFullName;
+                normalizedFullName = NormalizationUtil.normalizeFullName(normalizedFullName);
+                if (!normalizedFullName.equals(previousValue)) {
+                    log.debug("normalizeFullName utility produced canonical value for input");
+                }
+            } catch (IllegalArgumentException ex) {
+                log.debug("normalizeFullName kept non-canonical value after format check failed");
+            }
+        }
         log.debug("normalizeFullName inputPresent={} output={}", fullName != null, normalizedFullName);
         return normalizedFullName;
     }
