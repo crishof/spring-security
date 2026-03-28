@@ -33,3 +33,9 @@ build/
 .vscode/
 
 .env
+
+# Angular cache
+.angular/
+
+# TypeScript build info
+*.tsbuildinfo
