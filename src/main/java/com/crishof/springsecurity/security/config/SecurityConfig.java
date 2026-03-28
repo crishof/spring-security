@@ -25,7 +25,10 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
+import java.net.URI;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 @Configuration
@@ -40,14 +43,20 @@ public class SecurityConfig {
             "/swagger-ui.html",
             "/v3/api-docs/**",
             "/actuator/health",
-            "/api/v1/auth/signup",
+            // Registration endpoints
+            "/api/v1/auth/registration/signup",
+            "/api/v1/auth/registration/verify-email",
+            "/api/v1/auth/registration/resend-verification",
+            // Authentication endpoints
             "/api/v1/auth/login",
             "/api/v1/auth/refresh",
-            "/api/v1/auth/verify-email",
-            "/api/v1/auth/forgot-password",
-            "/api/v1/auth/reset-password",
-            "/api/v1/auth/accept-invite",
-            "/api/v1/auth/logout");
+            "/api/v1/auth/logout",
+            // Password recovery endpoints
+            "/api/v1/auth/password/forgot",
+            "/api/v1/auth/password/reset",
+            // Invitation endpoints
+            "/api/v1/invitations/*/info",
+            "/api/v1/invitations/accept");
 
     private static final List<String> ALLOWED_METHODS = List.of("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS");
     private static final List<String> EXPOSED_HEADERS = List.of("Authorization");
@@ -62,76 +71,97 @@ public class SecurityConfig {
 
     @Bean
     public PasswordEncoder passwordEncoder() {
-        log.debug("Using BCryptPasswordEncoder");
         return new BCryptPasswordEncoder();
     }
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration configuration) {
-        log.debug("Creating AuthenticationManager");
-        try {
-            log.debug("Getting AuthenticationManager from AuthenticationConfiguration");
-            return configuration.getAuthenticationManager();
-        } catch (Exception ex) {
-            log.error("Failed to create AuthenticationManager", ex);
-            throw new IllegalStateException("Failed to create AuthenticationManager", ex);
-        }
+        return configuration.getAuthenticationManager();
     }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) {
-        log.debug("Configuring Spring Security filter chain");
-        try {
-            log.debug("Disabling CSRF and setting CORS configuration");
-            http.csrf(AbstractHttpConfigurer::disable)
-                    .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                    .sessionManagement(
-                            session -> session
-                                    .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                    .exceptionHandling(
-                            exceptions -> exceptions
-                                    .authenticationEntryPoint(restAuthenticationEntryPoint)
-                            .accessDeniedHandler(restAccessDeniedHandler))
-                    .authorizeHttpRequests(
-                            auth ->
-                                    auth.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                            .requestMatchers(PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll()
-                            .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
-                            .requestMatchers("/actuator/**").hasRole("ADMIN")
-                            .anyRequest().authenticated())
-                    .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
-            log.debug("Spring Security filter chain configured");
-            return http.build();
-        } catch (Exception ex) {
-            log.error("Failed to configure Spring Security filter chain", ex);
-            throw new IllegalStateException("Failed to configure Spring Security filter chain", ex);
-        }
+        http.csrf(AbstractHttpConfigurer::disable)
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+                .sessionManagement(
+                        session -> session
+                                .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(
+                        exceptions -> exceptions
+                                .authenticationEntryPoint(restAuthenticationEntryPoint)
+                                .accessDeniedHandler(restAccessDeniedHandler))
+                .authorizeHttpRequests(
+                        auth -> auth
+                                .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
+                                .requestMatchers(PUBLIC_ENDPOINTS.toArray(String[]::new)).permitAll()
+                                .requestMatchers("/api/v1/admin/**").hasRole("ADMIN")
+                                .requestMatchers("/actuator/**").hasRole("ADMIN")
+                                .anyRequest().authenticated())
+                .addFilterBefore(jwtFilter, UsernamePasswordAuthenticationFilter.class);
+
+        return http.build();
     }
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource() {
-        log.debug("Creating CORS configuration source");
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(resolveAllowedOrigins());
+        configuration.setAllowedOriginPatterns(resolveAllowedOrigins());
         configuration.setAllowedMethods(ALLOWED_METHODS);
         configuration.setAllowedHeaders(ALL_HEADERS);
         configuration.setExposedHeaders(EXPOSED_HEADERS);
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);
-        log.debug("CORS configuration source created");
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
-        log.debug("Registering CORS configuration for all endpoints");
         source.registerCorsConfiguration("/**", configuration);
-        log.debug("CORS configuration registered for all endpoints");
         return source;
     }
 
     private List<String> resolveAllowedOrigins() {
-        log.debug("Resolving allowed origins from {}", allowedOrigins);
-        return Arrays.stream(allowedOrigins.split(","))
-                .map(String::trim)
+        List<String> resolvedOrigins = Arrays.stream(allowedOrigins.split(","))
+                .map(this::normalizeOrigin)
                 .filter(StringUtils::hasText)
-                .toList();
+                .collect(java.util.stream.Collectors.collectingAndThen(
+                        java.util.stream.Collectors.toCollection(LinkedHashSet::new),
+                        ArrayList::new));
+
+        if (resolvedOrigins.isEmpty()) {
+            throw new IllegalStateException("No valid CORS allowed origins were configured");
+        }
+
+        log.info("Configured CORS allowed origins/patterns: {}", resolvedOrigins);
+        return resolvedOrigins;
+    }
+
+    private String normalizeOrigin(String configuredValue) {
+        String trimmedValue = configuredValue.trim();
+        if (!StringUtils.hasText(trimmedValue)) {
+            return "";
+        }
+
+        if (trimmedValue.contains("*")) {
+            return trimTrailingSlashes(trimmedValue);
+        }
+
+        try {
+            URI uri = URI.create(trimmedValue);
+            if (StringUtils.hasText(uri.getScheme()) && StringUtils.hasText(uri.getHost())) {
+                String normalizedOrigin = uri.getScheme() + "://" + uri.getHost();
+                return uri.getPort() > -1 ? normalizedOrigin + ":" + uri.getPort() : normalizedOrigin;
+            }
+        } catch (IllegalArgumentException ex) {
+            log.warn("Ignoring invalid CORS origin value: {}", trimmedValue);
+            return "";
+        }
+
+        return trimTrailingSlashes(trimmedValue);
+    }
+
+    private String trimTrailingSlashes(String value) {
+        int endIndex = value.length();
+        while (endIndex > 0 && value.charAt(endIndex - 1) == '/') {
+            endIndex--;
+        }
+        return value.substring(0, endIndex);
     }
 }

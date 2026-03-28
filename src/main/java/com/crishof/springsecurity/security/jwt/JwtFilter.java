@@ -1,6 +1,7 @@
 package com.crishof.springsecurity.security.jwt;
 
 import com.crishof.springsecurity.security.principal.SecurityUserDetailsService;
+import io.jsonwebtoken.JwtException;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
@@ -57,7 +59,7 @@ public class JwtFilter extends OncePerRequestFilter {
                     log.debug("JWT filter processing request for path {}: authentication set", request.getRequestURI());
                 }
             }
-        } catch (Exception ex) {
+        } catch (JwtException | UsernameNotFoundException | IllegalArgumentException ex) {
             log.warn("JWT authentication failed for path {}: {}", request.getRequestURI(), ex.getMessage());
             SecurityContextHolder.clearContext();
         }
