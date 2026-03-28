@@ -6,6 +6,7 @@ import com.crishof.springsecurity.model.*;
 import com.crishof.springsecurity.repository.*;
 import com.crishof.springsecurity.security.jwt.JwtService;
 import com.crishof.springsecurity.security.principal.SecurityUser;
+import com.crishof.springsecurity.util.CodeGeneratorUtil;
 import com.crishof.springsecurity.util.NormalizationUtil;
 import io.jsonwebtoken.JwtException;
 import jakarta.transaction.Transactional;
@@ -24,7 +25,6 @@ import java.time.temporal.ChronoUnit;
 import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
-import java.util.concurrent.ThreadLocalRandom;
 
 @Service
 @RequiredArgsConstructor
@@ -32,7 +32,6 @@ import java.util.concurrent.ThreadLocalRandom;
 @Slf4j
 public class AuthServiceImpl implements AuthService {
 
-    private static final int VERIFICATION_CODE_DIGITS = 6;
     private static final long PASSWORD_RESET_MINUTES = 30;
     private static final long INVITATION_DAYS = 7;
     private static final String PASSWORD_REQUIREMENTS =
@@ -531,7 +530,7 @@ public class AuthServiceImpl implements AuthService {
         emailVerificationTokenRepository.deleteByUser(user);
         log.debug("previous email verification tokens deleted for userId={}", user.getId());
 
-        String code = generateVerificationCode();
+        String code = CodeGeneratorUtil.generateVerificationCode();
 
         EmailVerificationToken verificationToken =
                 EmailVerificationToken.builder()
@@ -601,11 +600,4 @@ public class AuthServiceImpl implements AuthService {
         return normalizedFullName;
     }
 
-    private String generateVerificationCode() {
-        int min = (int) Math.pow(10, VERIFICATION_CODE_DIGITS - 1.0);
-        int max = (int) Math.pow(10, VERIFICATION_CODE_DIGITS);
-        int code = ThreadLocalRandom.current().nextInt(min, max);
-        log.debug("generateVerificationCode produced a {}-digit code", VERIFICATION_CODE_DIGITS);
-        return String.valueOf(code);
-    }
 }
